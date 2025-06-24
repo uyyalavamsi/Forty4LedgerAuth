@@ -16,13 +16,8 @@ app.listen(5000, function () {
 
 app.get('/status', async function (req, res, next) {
     res.send("Server is up");
-} )
-
-app.post('/initCC', async function (req, res, next) {
-    const {userId} = req.body;
-    const result = await invoke.invokeTransaction('InitLedger', userId);
-    return { success:true, data: result };
 })
+
 
 
 app.post('/registerUser', async function (req, res, next) {
@@ -30,7 +25,7 @@ app.post('/registerUser', async function (req, res, next) {
         let userId, customRole, orgID;
 
         // check request body
-        console.log("Received request: ", req.body);
+        console.log("Received request:", req.body);
         if (req.body.userId && req.body.role) {
             userId = req.body.userId;
             
