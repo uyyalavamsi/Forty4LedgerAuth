@@ -24,11 +24,15 @@ class ehrChainCode extends Contract {
     //     8. Patient - Read/Write (All generated patient data)
 
     // data structure if patient 
-    //  {
+    
+    // patient-001: [{
     //     "patientId": "P001",
     //     "name": "John Doe",
     //     "dob": "1990-01-01",
-    //     "records": [
+    //     "authorizedDoctors": ["D001", "D002"]
+    //  }]
+
+    // "record-001":[
     //         {
     //         "recordId": "R001",
     //         "doctorId": "D001",
@@ -37,8 +41,6 @@ class ehrChainCode extends Contract {
     //         "timestamp": "2024-01-01T10:00:00Z"
     //         }
     //     ],
-    //     "authorizedDoctors": ["D001", "D002"]
-    //  }
 
     // generate recordId.
     recordIdGenerator(ctx){  
@@ -153,37 +155,37 @@ class ehrChainCode extends Contract {
 
      // add record | only doctor can add record
      // 1. first patient need to grand access to doctor to add record.
-    async addRecord(ctx, patientId, recordId, diagnosis, prescription) {
-        const { role, uuid: callerId } = this.getCallerAttributes(ctx);
+    // async addRecord(ctx, patientId, recordId, diagnosis, prescription) {
+    //     const { role, uuid: callerId } = this.getCallerAttributes(ctx);
 
-        if (role !== 'doctor') {
-            throw new Error('Only doctors can add records');
-        }
+    //     if (role !== 'doctor') {
+    //         throw new Error('Only doctors can add records');
+    //     }
 
-        const patientJSON = await ctx.stub.getState(patientId);
-        if (!patientJSON || patientJSON.length === 0) {
-            throw new Error(`Patient ${patientId} not found`);
-        }
+    //     const patientJSON = await ctx.stub.getState(patientId);
+    //     if (!patientJSON || patientJSON.length === 0) {
+    //         throw new Error(`Patient ${patientId} not found`);
+    //     }
 
-        const patient = JSON.parse(patientJSON.toString());
+    //     const patient = JSON.parse(patientJSON.toString());
 
-        if (!patient.authorizedDoctors.includes(callerId)) {
-            throw new Error(`Doctor ${callerId} is not authorized`);
-        }
+    //     if (!patient.authorizedDoctors.includes(callerId)) {
+    //         throw new Error(`Doctor ${callerId} is not authorized`);
+    //     }
 
-        const record = {
-            recordId,
-            doctorId: callerId,
-            diagnosis,
-            prescription,
-           timestamp: ctx.stub.getTxTimestamp().seconds.low.toString()
-        };
+    //     const record = {
+    //         recordId,
+    //         doctorId: callerId,
+    //         diagnosis,
+    //         prescription,
+    //        timestamp: ctx.stub.getTxTimestamp().seconds.low.toString()
+    //     };
 
-        patient.records.push(record);
-        await ctx.stub.putState(patientId, Buffer.from(stringify(patient)));
+    //     patient.records.push(record);
+    //     await ctx.stub.putState(patientId, Buffer.from(stringify(patient)));
 
-        return `Record ${recordId} added by doctor ${callerId}`;
-    }
+    //     return `Record ${recordId} added by doctor ${callerId}`;
+    // }
 
     // GetAllAssets returns all assets found in the world state.
     async GetAllAssets(ctx) {
@@ -207,6 +209,114 @@ class ehrChainCode extends Contract {
         }
         return stringify(allResults);
     }
+
+    async addPatient(ctx, patientId, name, dob) {
+        const key = `patient-${patientId}`;
+
+        const existing = await ctx.stub.getState(key);
+        if (existing && existing.length > 0) {
+            throw new Error(`Patient ${patientId} already exists`);
+        }
+
+        const patient = {
+            patientId,
+            name,
+            dob,
+            authorizedDoctors: []
+        };
+
+        await ctx.stub.putState(key, Buffer.from(JSON.stringify(patient)));
+        return `Patient ${patientId} registered`;
+    }
+
+    async addRecord(ctx, patientId, diagnosis, prescription) {
+        const { role, uuid: callerId } = this.getCallerAttributes(ctx);
+
+        if (role !== 'doctor') {
+            throw new Error('Only doctors can add records');
+        }
+
+        const patientJSON = await ctx.stub.getState(`patient-${patientId}`);
+        if (!patientJSON || patientJSON.length === 0) {
+            throw new Error(`Patient ${patientId} not found`);
+        }
+
+        const patient = JSON.parse(patientJSON.toString());
+        if (!patient.authorizedDoctors.includes(callerId)) {
+            throw new Error(`Doctor ${callerId} is not authorized for patient ${patientId}`);
+        }
+
+        const txId = ctx.stub.getTxID();
+        const recordId = `R-${txId}`;
+        const timestamp = new Date(ctx.stub.getTxTimestamp().seconds.low * 1000).toISOString();
+
+        const recordKey = ctx.stub.createCompositeKey('record', [patientId, recordId]);
+
+        const record = {
+            recordId,
+            patientId,
+            doctorId: callerId,
+            diagnosis,
+            prescription,
+            timestamp
+        };
+
+        await ctx.stub.putState(recordKey, Buffer.from(JSON.stringify(record)));
+        return `Record ${recordId} added for patient ${patientId}`;
+    }
+
+
+    async getAllRecordsByPatientId(ctx, patientId) {
+        const iterator = await ctx.stub.getStateByPartialCompositeKey('record', [patientId]);
+        const results = [];
+
+        for await (const res of iterator) {
+            results.push(JSON.parse(res.value.toString('utf8')));
+        }
+
+        return JSON.stringify(results);
+    }
+
+
+    async getRecordById(ctx, patientId, recordId) {
+        const recordKey = ctx.stub.createCompositeKey('record', [patientId, recordId]);
+        const recordJSON = await ctx.stub.getState(recordKey);
+
+        if (!recordJSON || recordJSON.length === 0) {
+            throw new Error(`Record ${recordId} not found for patient ${patientId}`);
+        }
+
+        return recordJSON.toString();
+    }
+
+
+    async grantAccess(ctx, patientId, doctorIdToGrant) {
+        const { role, uuid: callerId } = this.getCallerAttributes(ctx);
+
+        if (role !== 'patient') {
+            throw new Error('Only patients can grant access');
+        }
+
+        if (callerId !== patientId) {
+            throw new Error('Caller is not the owner of this patient record');
+        }
+
+        const key = `patient-${patientId}`;
+        const patientJSON = await ctx.stub.getState(key);
+        if (!patientJSON || patientJSON.length === 0) {
+            throw new Error(`Patient ${patientId} not found`);
+        }
+
+        const patient = JSON.parse(patientJSON.toString());
+
+        if (!patient.authorizedDoctors.includes(doctorIdToGrant)) {
+            patient.authorizedDoctors.push(doctorIdToGrant);
+            await ctx.stub.putState(key, Buffer.from(JSON.stringify(patient)));
+        }
+
+        return `Doctor ${doctorIdToGrant} authorized`;
+    }
+
 
     // get patient details by id
 
