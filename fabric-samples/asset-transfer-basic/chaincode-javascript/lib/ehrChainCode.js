@@ -24,7 +24,7 @@ class ehrChainCode extends Contract {
     //     8. Patient - Read/Write (All generated patient data)
 
     // data structure if patient 
-    
+
     // patient-001: [{
     //     "patientId": "P001",
     //     "name": "John Doe",
@@ -187,29 +187,6 @@ class ehrChainCode extends Contract {
     //     return `Record ${recordId} added by doctor ${callerId}`;
     // }
 
-    // GetAllAssets returns all assets found in the world state.
-    async GetAllAssets(ctx) {
-        // call by admin only 
-
-        const allResults = [];
-        // range query with empty string for startKey and endKey does an open-ended query of all assets in the chaincode namespace.
-        const iterator = await ctx.stub.getStateByRange('', '');
-        let result = await iterator.next();
-        while (!result.done) {
-            const strValue = Buffer.from(result.value.value.toString()).toString('utf8');
-            let record;
-            try {
-                record = JSON.parse(strValue);
-            } catch (err) {
-                console.log(err);
-                record = strValue;
-            }
-            allResults.push(record);
-            result = await iterator.next();
-        }
-        return stringify(allResults);
-    }
-
     async addPatient(ctx, patientId, name, dob) {
         const key = `patient-${patientId}`;
 
@@ -317,6 +294,33 @@ class ehrChainCode extends Contract {
         return `Doctor ${doctorIdToGrant} authorized`;
     }
 
+    // GetAllAssets returns all assets found in the world state.
+    async fetchLedger(ctx) {
+        // call by admin only 
+        const { role, uuid: callerId } = this.getCallerAttributes(ctx);
+
+        if (role !== 'hospital') {
+            throw new Error('Only hospital can fetch blockchain ledger');
+        }
+
+        const allResults = [];
+        // range query with empty string for startKey and endKey does an open-ended query of all assets in the chaincode namespace.
+        const iterator = await ctx.stub.getStateByRange('', '');
+        let result = await iterator.next();
+        while (!result.done) {
+            const strValue = Buffer.from(result.value.value.toString()).toString('utf8');
+            let record;
+            try {
+                record = JSON.parse(strValue);
+            } catch (err) {
+                console.log(err);
+                record = strValue;
+            }
+            allResults.push(record);
+            result = await iterator.next();
+        }
+        return stringify(allResults);
+    }
 
     // get patient details by id
 
