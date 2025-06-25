@@ -187,7 +187,7 @@ class ehrChainCode extends Contract {
     //     return `Record ${recordId} added by doctor ${callerId}`;
     // }
 
-    async addPatient(ctx, patientId, name, dob) {
+    async onboardPatient(ctx, patientId, name, dob, city) {
         const key = `patient-${patientId}`;
 
         const existing = await ctx.stub.getState(key);
@@ -199,6 +199,7 @@ class ehrChainCode extends Contract {
             patientId,
             name,
             dob,
+            city,
             authorizedDoctors: []
         };
 
@@ -242,7 +243,6 @@ class ehrChainCode extends Contract {
         return `Record ${recordId} added for patient ${patientId}`;
     }
 
-
     async getAllRecordsByPatientId(ctx, patientId) {
         const iterator = await ctx.stub.getStateByPartialCompositeKey('record', [patientId]);
         const results = [];
@@ -254,7 +254,6 @@ class ehrChainCode extends Contract {
         return JSON.stringify(results);
     }
 
-
     async getRecordById(ctx, patientId, recordId) {
         const recordKey = ctx.stub.createCompositeKey('record', [patientId, recordId]);
         const recordJSON = await ctx.stub.getState(recordKey);
@@ -265,7 +264,6 @@ class ehrChainCode extends Contract {
 
         return recordJSON.toString();
     }
-
 
     async grantAccess(ctx, patientId, doctorIdToGrant) {
         const { role, uuid: callerId } = this.getCallerAttributes(ctx);
@@ -321,6 +319,41 @@ class ehrChainCode extends Contract {
         }
         return stringify(allResults);
     }
+
+    async queryHistoryOfAsset(ctx, assetId) {
+        const iterator = await ctx.stub.getHistoryForKey(assetId);
+        const results = [];
+
+        while (true) {
+            const res = await iterator.next();
+
+            if (res.value) {
+                const tx = {
+                    txId: res.value.txId,
+                    timestamp: res.value.timestamp ? res.value.timestamp.toISOString() : null,
+                    isDelete: res.value.isDelete,
+                };
+
+                try {
+                    if (res.value.value && res.value.value.length > 0 && !res.value.isDelete) {
+                        tx.asset = JSON.parse(res.value.value.toString('utf8'));
+                    }
+                } catch (err) {
+                    tx.asset = null;
+                }
+
+                results.push(tx);
+            }
+
+            if (res.done) {
+                await iterator.close();
+                break;
+            }
+        }
+
+        return results;
+    }
+
 
     // get patient details by id
 

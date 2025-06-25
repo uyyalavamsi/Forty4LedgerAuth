@@ -49,13 +49,13 @@ const getQuery = async (fcn, args, userId) => {
     const contract = network.getContract(chaincodeName);
     
     // Submit transaction
-    let result = await contract.evaluateTransaction(fcn, args.id);
+    let result = await contract.evaluateTransaction(fcn, args.recordId);
     result = JSON.parse(result);
 
     console.log(`Response from ${fcn} chaincode :: `, result);
 
     // Disconnect from the gateway.
-    await gateway.disconnect();
+    gateway.disconnect();
             
     return result;  
 

@@ -51,7 +51,7 @@ async function main() {
             affiliation: 'org1.department1',
             enrollmentID: 'Doctor01-Rama',
             role: 'client',
-            attrs: [{ name: 'role', value: 'Doctor', ecert: true },{ name: 'uuid', value: 'Doctor01-Rama', ecert: true }],
+            attrs: [{ name: 'role', value: 'Doctor', ecert: true },{ name: 'uuid', value: 'Doctor-Rama', ecert: true }],
         }, adminUser);
         const enrollment = await ca.enroll({
             enrollmentID: 'Doctor01-Rama',

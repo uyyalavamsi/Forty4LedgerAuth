@@ -41,7 +41,7 @@ const invokeTransaction = async (fcn, args, userID) => {
     
     console.log("arguments at invoke: ", JSON.stringify(args))
     // Submit transaction
-    let result = await contract.submitTransaction(fcn, args.id, args.createdBy, args.title, args.details);
+    let result = await contract.submitTransaction(fcn, args.recordId, args.createdBy, args.title, args.details);
     // let result = await contract.submitTransaction(func, args.id, args.createdBy, args.title, args.details);
     result = JSON.parse(result);
     console.log(`Response from ${fcn} chaincode:}`, result);

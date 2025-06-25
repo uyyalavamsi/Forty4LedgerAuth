@@ -67,8 +67,8 @@ $ ssh-add ~/ssh/github -->
 
 ### API List
     
-    1. register - as Patient
-    2. login - as Patient
+    1. registerPatient - as Patient
+    2. loginPatient - as Patient
     3. grantAccess - to doctor from Patient
     4. addRecord - of Patient
     5. getRecordById - of Patient 

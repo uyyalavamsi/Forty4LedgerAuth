@@ -5,12 +5,9 @@ const path = require('path');
 const FabricCAServices = require('fabric-ca-client');
 const { Wallets, Gateway } = require('fabric-network');
 
-const channelName = 'mychannel';
-const chaincodeName = 'test12';
 
-
-const registerUser = async (userID, userRole) => {
-    const adminID = 'admin';
+const registerUser = async (adminID, userID, userRole, patientData) => {
+    // const adminID = 'admin';
     const orgID = 'Org1';
     
     const ccpPath = path.resolve(__dirname, '..', 'fabric-samples','test-network', 'organizations', 'peerOrganizations', `${orgID}.example.com`.toLowerCase(), `connection-${orgID}.json`.toLowerCase());
@@ -62,7 +59,7 @@ const registerUser = async (userID, userRole) => {
         role: 'client',
         attrs: [
             {name: 'role', value: userRole, ecert: true},           
-            {name: 'userId', value: userID, ecert: true},           
+            {name: 'uuid', value: userID, ecert: true},           
         ]
     }, adminUser);
     const enrollment = await ca.enroll({
@@ -70,7 +67,7 @@ const registerUser = async (userID, userRole) => {
         enrollmentSecret: secret,
         attr_reqs: [
             {name: 'role', optional: false},          
-            {name: 'userId', optional: false},          
+            {name: 'uuid', optional: false},          
         ]
     });
     const x509Identity = {
@@ -83,17 +80,40 @@ const registerUser = async (userID, userRole) => {
     };
     await wallet.put(userID, x509Identity);
     console.log(`Successfully registered and enrolled user ${userID} and imported it into the wallet`);
-   
+    
+     // Create a new gateway for connecting to our peer node.
+        const gateway = new Gateway();
+        await gateway.connect(ccp, { wallet, identity: 'Doctor01-Rama', discovery: { enabled: true, asLocalhost: true } });
+
+        // Get the network (channel) our contract is deployed to.
+        const network = await gateway.getNetwork('mychannel');
+
+        // Get the contract from the network.
+        const contract = network.getContract('ehrChainCode');
+
+        // let patientId="Rama";
+        // let hospitalName="Hospital01-ABC";
+        // let name="Rama";
+        // let city="Pune";
+
+        const res = await contract.submitTransaction('onboardPatient', patientId, patientData.name, patientData.dob, patientData.city);
+        console.log("/n === Onboard Doctor success === /n", res.toString());
+
+        // Disconnect from the gateway.
+        gateway.disconnect();
+
     return {
         statusCode: 200,
         userID: userID,
         role: userRole,
         message: `${userID} registered and enrolled successfully.`,
-        
+        chaincodeRes: res
     };
 }
 
-const login = async (userID, orgID) => {
+const login = async (userID) => {
+
+    const orgID = 'Org1';
 
     const ccpPath = path.resolve(__dirname, '..', 'fabric-samples', 'test-network', 'organizations', 'peerOrganizations', `${orgID}.example.com`.toLowerCase(), `connection-${orgID}.json`.toLowerCase());
     const ccp = JSON.parse(fs.readFileSync(ccpPath, 'utf8'));
