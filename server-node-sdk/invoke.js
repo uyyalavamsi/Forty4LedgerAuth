@@ -9,7 +9,7 @@ const invokeTransaction = async (fcn, args, userID) => {
 
     const orgID = 'Org1';
     const channelName = 'mychannel';
-    const chaincodeName = 'test12';
+    const chaincodeName = 'ehrChainCode';
 
     const ccpPath = path.resolve(__dirname, '..', 'fabric-samples','test-network', 'organizations', 'peerOrganizations', `${orgID}.example.com`.toLowerCase(), `connection-${orgID}.json`.toLowerCase());
     const ccp = JSON.parse(fs.readFileSync(ccpPath, 'utf8'));
@@ -41,7 +41,7 @@ const invokeTransaction = async (fcn, args, userID) => {
     
     console.log("arguments at invoke: ", JSON.stringify(args))
     // Submit transaction
-    let result = await contract.submitTransaction(fcn, args.recordId, args.createdBy, args.title, args.details);
+    let result = await contract.submitTransaction(fcn, JSON.stringify(args));
     // let result = await contract.submitTransaction(func, args.id, args.createdBy, args.title, args.details);
     result = JSON.parse(result);
     console.log(`Response from ${fcn} chaincode:}`, result);
@@ -50,7 +50,6 @@ const invokeTransaction = async (fcn, args, userID) => {
     gateway.disconnect();
             
     return result;  
-
 }
 
 module.exports = {invokeTransaction};

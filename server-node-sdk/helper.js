@@ -6,7 +6,7 @@ const FabricCAServices = require('fabric-ca-client');
 const { Wallets, Gateway } = require('fabric-network');
 
 
-const registerUser = async (adminID, userID, userRole, patientData) => {
+const registerUser = async (adminID, doctorId, userID, userRole, args) => {
     // const adminID = 'admin';
     const orgID = 'Org1';
     
@@ -83,7 +83,7 @@ const registerUser = async (adminID, userID, userRole, patientData) => {
     
      // Create a new gateway for connecting to our peer node.
         const gateway = new Gateway();
-        await gateway.connect(ccp, { wallet, identity: 'Doctor01-Rama', discovery: { enabled: true, asLocalhost: true } });
+        await gateway.connect(ccp, { wallet, identity: doctorId, discovery: { enabled: true, asLocalhost: true } });
 
         // Get the network (channel) our contract is deployed to.
         const network = await gateway.getNetwork('mychannel');
@@ -91,14 +91,14 @@ const registerUser = async (adminID, userID, userRole, patientData) => {
         // Get the contract from the network.
         const contract = network.getContract('ehrChainCode');
 
-        // let patientId="Rama";
-        // let hospitalName="Hospital01-ABC";
-        // let name="Rama";
-        // let city="Pune";
+        const args01 = {
+            patientId:userID,
+            hospitalName: args.hospitalName,
+            name:args.name,
+            city:args.city
+        }
 
-        const res = await contract.submitTransaction('onboardPatient', patientId, patientData.name, patientData.dob, patientData.city);
-        console.log("/n === Onboard Doctor success === /n", res.toString());
-
+        const buffer = await contract.submitTransaction('onboardPatient', JSON.stringify(args01));
         // Disconnect from the gateway.
         gateway.disconnect();
 
@@ -107,7 +107,7 @@ const registerUser = async (adminID, userID, userRole, patientData) => {
         userID: userID,
         role: userRole,
         message: `${userID} registered and enrolled successfully.`,
-        chaincodeRes: res
+        chaincodeRes: buffer.toString()
     };
 }
 

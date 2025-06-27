@@ -22,7 +22,7 @@ app.get('/status', async function (req, res, next) {
 app.post('/registerPatient', async function (req, res, next) {
     try {
         let role; 
-        const {adminId, userId, name, dob, city} = req.body;
+        let {adminId, doctorId, userId, name, dob, city} = req.body;
 
         // check request body
         console.log("Received request:", req.body);
@@ -34,11 +34,11 @@ app.post('/registerPatient', async function (req, res, next) {
             console.log("Missing input data. Please enter all the user details.");
             throw new Error("Missing input data. Please enter all the user details.");
         }
-        orgID = req.body.orgID ? req.body.orgID : 'Org1';
-        role='Patient';
+        
+        role='patient';
 
         //call registerEnrollUser function and pass the above as parameters to the function
-        const result = await helper.registerUser(adminId, userId, role, {name, dob, city});
+        const result = await helper.registerUser(adminId, doctorId, userId, role, { name, dob, city});
         console.log("Result from user registration function:", result);
 
         // check register function response and set API response accordingly 
@@ -96,7 +96,7 @@ app.post('/addRecord', async function (req, res, next){
         const {userId, patientId, diagnosis, prescription} = req.body;
         const result = await invoke.invokeTransaction('addRecord', {patientId, diagnosis, prescription}, userId);
               
-        res.send({sucess:true, data: JSON.parse(result.data)})
+        res.send({sucess:true, data: result})
                 
     } catch (error) {       
         next(error);
@@ -108,7 +108,7 @@ app.post('/getAllRecordsByPatientId', async function (req, res, next){
     try {
         // getAllRecordsByPatientId(ctx, patientId
         const {userId, patientId} = req.body;  
-        const result = await query.getQuery('getAllRecordsByPatientId',{patientId, recordId}, userId);
+        const result = await query.getQuery('getAllRecordsByPatientId',{patientId}, userId);
 
         console.log("Response from chaincode", result);
         res.status(200).send({ success: true, data:result});
@@ -134,9 +134,10 @@ app.post('/getRecordById', async function (req, res, next){
 
 app.post('/grantAccess', async function (req, res, next){
     try {
+        // call this from patient 
         // grantAccess(ctx, patientId, doctorIdToGrant) - call by patient
         const {userId, patientId, doctorIdToGrant} = req.body;  
-        const result = await invoke.invokeTransaction('grantAccess',{patientId, doctorIdToGrant}, userId);
+        const result = await invoke.invokeTransaction('grantAccess',{patientId:patientId, doctorIdToGrant:doctorIdToGrant}, userId);
 
         console.log("Response from chaincode", result);
         res.status(200).send({ success: true, data:result});
@@ -150,8 +151,9 @@ app.post('/grantAccess', async function (req, res, next){
 // fetchLedger(ctx, timeStamp, amount, timeDelay)
 app.post('/fetchLedger', async function (req, res, next){
     try {
+        let userId = req.body.userId;
         // fetchLedger(ctx)
-        const result = await query.getQuery('fetchLedger',{}, userId);
+        const result = await query.getQuery('fetchLedger', {}, userId);
         console.log("Response from chaincode", result);
         //check response returned by login function and set API response accordingly
             res.status(200).send({ success: true, data:result})

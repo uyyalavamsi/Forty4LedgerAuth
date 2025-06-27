@@ -15,7 +15,7 @@ const getQuery = async (fcn, args, userId) => {
 
     const orgID = 'Org1';
     const channelName = 'mychannel';
-    const chaincodeName = 'test12';
+    const chaincodeName = 'ehrChainCode';
 
     const ccpPath = path.resolve(__dirname, '..', 'fabric-samples', 'test-network', 'organizations', 'peerOrganizations', `${orgID}.example.com`.toLowerCase(), `connection-${orgID}.json`.toLowerCase());
     const ccp = JSON.parse(fs.readFileSync(ccpPath, 'utf8'));
@@ -49,7 +49,7 @@ const getQuery = async (fcn, args, userId) => {
     const contract = network.getContract(chaincodeName);
     
     // Submit transaction
-    let result = await contract.evaluateTransaction(fcn, args.recordId);
+    let result = await contract.evaluateTransaction(fcn, JSON.stringify(args));
     result = JSON.parse(result);
 
     console.log(`Response from ${fcn} chaincode :: `, result);
@@ -60,5 +60,6 @@ const getQuery = async (fcn, args, userId) => {
     return result;  
 
 }
+
 
 module.exports = {getQuery};
