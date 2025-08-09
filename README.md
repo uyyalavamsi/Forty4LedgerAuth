@@ -20,7 +20,7 @@ $ ssh-add ~/ssh/github -->
 
 ## To test network 
 
-    $ cd /fabric-samples/test-network
+    $ cd fabric-samples/test-network
     $ ./network.sh up
 
     $ docker ps    // to check running container or check in docker desktop
@@ -105,3 +105,7 @@ $ ssh-add ~/ssh/github -->
   [ "recordType"="hospital", "createdBy"="hospitalId", data={ name="ABC Hosptial", address="acb location"  } ]
 
   [ "recordType"="physician", "createdBy"="physicianID", data={ name="ABC Hosptial", address="acb location"  } ]
+
+## Steps to setup explorer
+
+ 

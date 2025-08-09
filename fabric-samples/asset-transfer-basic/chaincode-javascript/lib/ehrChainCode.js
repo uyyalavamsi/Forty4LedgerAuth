@@ -58,7 +58,7 @@ class ehrChainCode extends Contract {
         const orgMSP = ctx.clientIdentity.getMSPID();
 
         if (orgMSP !== 'Org1MSP' || role !== 'hospital') {
-            throw new Error('Only hospital can onboard doc tor.');
+            throw new Error('Only hospital can onboard doctor.');
         }
 
         const doctorJSON = await ctx.stub.getState(doctorId);
