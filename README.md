@@ -108,4 +108,23 @@ $ ssh-add ~/ssh/github -->
 
 ## Steps to setup explorer
 
+Step 0:  $ cd fabric-explorer/
+
+Step 1. Copy the orgination folder from your running network to explorer to get access of one of the node in network.
+
+    $  sudo cp -r ../fabric-samples/test-network/organizations/ .
+    $  cp -r ../fabric-samples/test-network/organizations/ .
+
+Step 2. Export env vraiables.
+    
+    export EXPLORER_CONFIG_FILE_PATH=./config.json
+    export EXPLORER_PROFILE_DIR_PATH=./connection-profile
+    export FABRIC_CRYPTO_PATH=./organizations
+
  
+Step 3. Edit test-network.json 
+	
+    Inside adminPrivateKey section check the path
+    It should look like this (change the id which is present in your crypto certs)
+
+Step 4: docker-compose up -d
