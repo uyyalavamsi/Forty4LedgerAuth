@@ -127,4 +127,14 @@ Step 3. Edit test-network.json
     Inside adminPrivateKey section check the path
     It should look like this (change the id which is present in your crypto certs)
 
-Step 4: docker-compose up -d
+Step 4: 
+    to start with out logs
+
+    $ docker-compose up -d                    
+
+    to start with logs.
+    
+    $ docker-compose up
+
+Step 5: To Stop Explorer
+        $ docker-compose down
