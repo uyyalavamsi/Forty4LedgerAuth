@@ -1,140 +1,160 @@
-# Electronic Health Record Blockchain Based Platfrom - Project
+# Forty4LedgerAuth
 
-## Tech stack
+A Hyperledger Fabric-based secure registration and authentication system with a modern React frontend and Web3-inspired theme.
 
-    - Hyperledger Fabric blockchain (Node SDK JavaScript)
-    - Node.js
-    - Next.js
-    - IPFS
+This project allows users to register, login, and fetch ledger information stored on a Hyperledger Fabric blockchain, ensuring data integrity, security, and transparency.  
 
-<!-- ADD github access 
+The frontend uses React.js with Tailwind CSS for a clean, professional Web3-style interface.
 
-$ eval "$(ssh-agent -s)"
-$ ssh-add ~/ssh/github -->
+---
 
-# Steps to setup project
+## Project Overview
 
-## Download fabric binarys and fabric sample repo
+Forty4LedgerAuth demonstrates a simple authentication system using Hyperledger Fabric. It covers:
 
-    $ ./install-fabric.sh 
+1. Setting up the Hyperledger Fabric environment  
+2. Working with Fabric CA for user enrollment  
+3. Storing user credentials in wallets  
+4. Implementing a Node.js backend for registration, login, and ledger queries  
+5. Fetching ledger information on the React dashboard  
 
-## To test network 
+---
 
-    $ cd fabric-samples/test-network
-    $ ./network.sh up
+## Step-by-Step Setup
 
-    $ docker ps    // to check running container or check in docker desktop
-    
-    $ ./network.sh down     // to down network
+### 1. Set up the Environment
 
-## to run network with ca and create mychannel 
+- Install Hyperledger Fabric binaries and Docker images.  
+- Ensure cryptogen, configtxgen, peer, and fabric-ca-client are available.  
+- Start a basic test network using fabric-samples/test-network:
 
-    $ cd fabric-samples/test-network
-    
-    Create network with ca cert: 
-    
-    $ ./network.sh up createChannel -ca -s couchdb
-    
-### Chain code deployment command
+```bash
+cd fabric-samples/test-network
+./network.sh up createChannel -ca
 
-- Deploy chain code
-	    
-    $ ./network.sh deployCC -ccn ehrChainCode -ccp ../asset-transfer-basic/chaincode-javascript/ -ccl javascript
-
-    *Down Network - only if you want to stop network or close system
-	
-    $ ./network.sh down
-
-### Register Admin
-
-    $ cd server-node-sdk/
-    $ node cert-script/registerOrg1Admin.js
-    $ node cert-script/registerOrg2Admin.js
-
-### onboard script
-    
-    $ node cert-script/onboardHospital01.js 
-    $ node cert-script/onboardDoctor.js
-
-    $ node cert-script/onboardInsuranceCompany.js 
-    $ node cert-script/onboardInsuranceAgent.js
-
-    *** you can use script to call chaincode and perform read and write opration on blockchain ledger. - optional *** 
-
-### start node server to use api
-
-    $ npm run dev
-
-### API List
-    
-    1. registerPatient - as Patient
-    2. loginPatient - as Patient
-    3. grantAccess - to doctor from Patient
-    4. addRecord - of Patient
-    5. getRecordById - of Patient 
-    6. getAllRecordByPatienId - filter record by patient
-    7. fetchLedger - fetch all transaction only admin can fetch.
-
-## chaincode logic
-
-    - lets first understand the actors in our chaincode
-
-    1. Goverment - network owner
-    2. Hospital - Network orgination 
-    3. Practicing physician / Doctor - member of hospital
-    4. Diagnostics center - org OR peer of hospital
-    5. Pharmacies - Org OR peer of hospital
-    6. Researchers / R&D - org
-    7. Insurance companies - org
-    8. Patient - end user
+2. Work with Fabric CA
+Enroll the CA admin:
+fabric-ca-client enroll -u https://admin:adminpw@localhost:7054 --caname ca.example.com -M ~/fabric-ca/admin/msp
 
 
-   ## now lets see there read write access
+3. Store User Credentials
 
-        1. Goverment - network owner - admin access
-        2. Hospital - Network orgination - Read/Write (doctor data)
-        3. Practicing physician/Doctor - Read/Write (Patient data w.r.t to hospital)
-        4. Diagnostics center - Read/Write (Patient records w.r.t to diagnostics center)
-        5. Pharmacies - Read/Write (Patient prescriptions w.r.t to pharma center)
-        6. Researchers / R&D - Read data of hospital conect, pateint based on consent. 
-        7. Insurance companies - Read/Write (Patient claims)
-        8. Patient - Read/Write (All generated patient data)
+Save the generated certificates and keys in a wallet (file system or database).
 
-  ## object strucutre in db.
+In this project, a file-based wallet is used to store user identities.
 
-  [ "recordType"="hospital", "createdBy"="hospitalId", data={ name="ABC Hosptial", address="acb location"  } ]
+The wallet is critical for authentication and signing transactions on the blockchain.
 
-  [ "recordType"="physician", "createdBy"="physicianID", data={ name="ABC Hosptial", address="acb location"  } ]
+4. Implement Authentication (Node.js Backend)
 
-## Steps to setup explorer
+Backend handles registration, login, and fetching ledger info.
 
-Step 0:  $ cd fabric-explorer/
+Steps:
 
-Step 1. Copy the orgination folder from your running network to explorer to get access of one of the node in network.
+Load user credentials from the wallet.
 
-    $  sudo cp -r ../fabric-samples/test-network/organizations/ .
-    $  cp -r ../fabric-samples/test-network/organizations/ .
+Connect to Fabric gateway using the loaded identity.
 
-Step 2. Export env vraiables.
-    
-    export EXPLORER_CONFIG_FILE_PATH=./config.json
-    export EXPLORER_PROFILE_DIR_PATH=./connection-profile
-    export FABRIC_CRYPTO_PATH=./organizations
+Verify authentication by querying the ledger.
 
- 
-Step 3. Edit test-network.json 
-	
-    Inside adminPrivateKey section check the path
-    It should look like this (change the id which is present in your crypto certs)
+| Endpoint     | Method | Description                             |
+| ------------ | ------ | --------------------------------------- |
+| /register    | POST   | Register a new user and store in wallet |
+| /login       | POST   | Login with username, fetch ledger info  |
+| /ledger-info | GET    | Query the ledger for user transactions  |
 
-Step 4: 
-    to start with out logs
 
-    $ docker-compose up -d                    
+5. Frontend Setup (React + Tailwind)
+    1.Navigate to frontend:
+        cd frontend
+        npm install
+        npm run dev
 
-    to start with logs.
-    
-    $ docker-compose up
+    2.Open browser at http://localhost:5173.
+        Pages:
+            Registration: register a new user
 
-Step 5: To Stop Explorer
-        $ docker-compose down
+            Login: login using registered username
+
+            Dashboard: fetch and display ledger info (ledger query)
+
+6. Usage
+    Register a user → /register
+    Login with the user → /login
+    Dashboard displays ledger info → /dashboard
+    Screenshots:
+        1.er Registration: screenshots/registration.pn
+       2.ser Login / Enrollment: screenshots/login.png
+       3.edger Query (Dashboard): screenshots/dashboard.png
+
+Notes
+
+Ensure Hyperledger Fabric network is running before starting backend.
+Ledger data is read-only; updates are automatically recorded on blockchain.
+Tailwind CSS provides Web3-inspired styling for a modern interface.
+
+Folder Structure:
+
+
+Forty4LedgerAuth/
+├── backend/
+│   ├── server.js
+│   └── package.json
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   │   └── Navbar.jsx
+│   │   ├── App.jsx
+│   │   ├── Login.jsx
+│   │   ├── Registration.jsx
+│   │   └── Dashboard.jsx
+│   ├── index.css
+│   └── package.json
+├── screenshots/
+│   ├── registration.png
+│   ├── login.png
+│   └── dashboard.png
+├── .gitignore
+└── README.md
+
+Tech Stack
+
+    Frontend: React.js, Tailwind CSS, Vite
+    Backend: Node.js, Express
+    Blockchain: Hyperledger Fabric
+    Storage: Ledger & Wallet (certificates and keys)
+
+    User Registration Flow
+
+        The following diagram shows how a user registers through the UI and how the backend interacts with Hyperledger Fabric:
+
++-----------------+                          +------------------+
+|                 |                          |                  |
+|  Registration   |        HTTP POST         |   Backend API    |
+|      UI         |  ----------------------> |  (Node.js /      |
+|  (React.js)     |                          |   Express)       |
++-----------------+                          +------------------+
+        |                                             |
+        |                                             |
+        |                                             |
+        |                                             v
+        |                                  +------------------+
+        |                                  |                  |
+        |                                  | Fabric CA Server |
+        |                                  |  (Enroll /       |
+        |                                  |   Register User) |
+        |                                  +------------------+
+        |                                             |
+        |                                             |
+        |                                             v
+        |                                  +------------------+
+        |                                  |                  |
+        |                                  |  Wallet Storage  |
+        |                                  | (Certs & Keys)   |
+        |                                  +------------------+
+        |                                             |
+        |                                             |
+        +<--------------------------------------------+
+                       Success Response
+
+
